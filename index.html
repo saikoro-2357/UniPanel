@@ -389,7 +389,7 @@
     </label>
     <button class="tool-button" id="randomizeButton" type="button">盤面ランダム</button>
     <button class="tool-button" id="challengeButton" type="button" aria-pressed="false">ターゲット OFF</button>
-    <button class="tool-button" id="shareButton" type="button">SNS共有</button>
+    <button class="tool-button" id="shareButton" type="button">Xで投稿</button>
   </div>
 
   <header>
@@ -841,36 +841,21 @@ FFF0..FFFF;Specials`
       ).toString(16).toUpperCase()).join('');
     }
 
-    async function shareCurrentPanel() {
-      if (window.location.protocol === 'file:') {
-        shareButton.textContent = 'サーバー起動が必要';
-        window.setTimeout(() => { shareButton.textContent = 'SNS共有'; }, 1600);
-        return;
+    function shareCurrentPanel() {
+      const code = currentHexCode();
+      const shareUrl = new URL(window.location.href);
+      if (shareUrl.pathname.endsWith('/share')) {
+        shareUrl.pathname = shareUrl.pathname.slice(0, -5);
       }
-
-      const shareUrl = new URL('/share', window.location.origin);
+      shareUrl.search = '';
+      shareUrl.hash = '';
       shareUrl.searchParams.set('code', currentHexCode());
       shareUrl.searchParams.set('bg', backgroundColor.value.slice(1));
-      const shareData = {
-        title: 'UniPanel',
-        text: `UniPanel U+${currentHexCode()}`,
-        url: shareUrl.toString()
-      };
-
-      try {
-        if (navigator.share) {
-          await navigator.share(shareData);
-        } else {
-          await navigator.clipboard.writeText(shareData.url);
-          shareButton.textContent = 'URLをコピーしました';
-          window.setTimeout(() => { shareButton.textContent = 'SNS共有'; }, 1600);
-        }
-      } catch (error) {
-        if (error?.name !== 'AbortError') {
-          shareButton.textContent = '共有できませんでした';
-          window.setTimeout(() => { shareButton.textContent = 'SNS共有'; }, 1600);
-        }
-      }
+      const character = glyph.classList.contains('tofu') ? '□' : glyph.textContent;
+      const intentUrl = new URL('https://twitter.com/intent/tweet');
+      intentUrl.searchParams.set('text', `U+${code} ${character}`);
+      intentUrl.searchParams.set('url', shareUrl.toString());
+      window.open(intentUrl.toString(), '_blank', 'noopener,noreferrer');
     }
 
     shareButton.addEventListener('click', shareCurrentPanel);
