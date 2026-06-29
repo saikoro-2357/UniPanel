@@ -853,8 +853,10 @@ FFF0..FFFF;Specials`
       shareUrl.searchParams.set('bg', backgroundColor.value.slice(1));
       const character = glyph.classList.contains('tofu') ? '□' : glyph.textContent;
       const intentUrl = new URL('https://twitter.com/intent/tweet');
-      intentUrl.searchParams.set('text', `U+${code} ${character}`);
-      intentUrl.searchParams.set('url', shareUrl.toString());
+      intentUrl.searchParams.set(
+        'text',
+        `U+${code} ${character}\n#ゆにぱねる #Unicode\n${shareUrl.toString()}`
+      );
       window.open(intentUrl.toString(), '_blank', 'noopener,noreferrer');
     }
 
@@ -951,7 +953,7 @@ FFF0..FFFF;Specials`
       }
       window.clearTimeout(copyFeedbackTimer);
       copyFeedbackTimer = window.setTimeout(() => {
-        copyButton.textContent = 'コピー';
+        copyButton.textContent = '文字をコピー';
       }, 1200);
     }
 
