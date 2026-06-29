@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniPanel</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --panel-size: min(38vw, 420px);
+      --layout-gap: clamp(52px, 9vw, 140px);
+      --line: 2px;
+      --white: #f5f5f2;
+      --muted: #888;
+      --background: #000000;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      background: var(--background);
+      color: var(--white);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: clamp(24px, 5vw, 64px);
+      font-family: "Noto Sans", "Noto Sans CJK JP", "Yu Gothic", sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      width: calc(var(--panel-size) * 2 + var(--layout-gap));
+      margin-bottom: clamp(28px, 5vh, 60px);
+    }
+
+    h1 {
+      margin: 0;
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size: clamp(24px, 3vw, 40px);
+      font-weight: 600;
+      letter-spacing: .08em;
+    }
+
+    .codepoint {
+      color: var(--muted);
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size: 14px;
+      letter-spacing: .08em;
+    }
+
+    main {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      gap: var(--layout-gap);
+    }
+
+    main::after {
+      position: absolute;
+      top: 0;
+      left: calc(var(--panel-size) + clamp(26px, 4.5vw, 70px));
+      width: 1px;
+      height: var(--panel-size);
+      background: rgba(245, 245, 242, .2);
+      content: "";
+      pointer-events: none;
+    }
+
+    .panel-area {
+      width: var(--panel-size);
+      flex: 0 0 var(--panel-size);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      width: var(--panel-size);
+      aspect-ratio: 1;
+      border-top: var(--line) solid var(--white);
+      border-left: var(--line) solid var(--white);
+    }
+
+    .cell {
+      position: relative;
+      appearance: none;
+      min-width: 0;
+      padding: 0;
+      border: 0;
+      border-right: var(--line) solid var(--white);
+      border-bottom: var(--line) solid var(--white);
+      border-radius: 0;
+      background: var(--background);
+      cursor: pointer;
+    }
+
+    .cell::after {
+      position: absolute;
+      inset: 0;
+      content: "";
+      background: repeating-linear-gradient(
+        -45deg,
+        transparent 0,
+        transparent 9px,
+        var(--white) 9px,
+        var(--white) 12px
+      );
+      background-size: calc(var(--panel-size) - 4px) calc(var(--panel-size) - 4px);
+      background-position: var(--x-pos) var(--y-pos);
+      clip-path: polygon(0 100%, 0 100%, 0 100%);
+      transition: clip-path 320ms cubic-bezier(.22, 1, .36, 1);
+      will-change: clip-path;
+    }
+
+    .cell.on::after {
+      clip-path: polygon(0 100%, 200% 100%, 0 -100%);
+    }
+
+    .cell:hover {
+      background: color-mix(in srgb, var(--background) 88%, white 12%);
+    }
+
+    .cell:active {
+      background: color-mix(in srgb, var(--background) 76%, white 24%);
+    }
+
+    .cell:focus-visible {
+      z-index: 1;
+      outline: 3px solid #63b3ff;
+      outline-offset: -5px;
+    }
+
+    .code-row {
+      position: relative;
+      display: block;
+      margin-top: 18px;
+    }
+
+    .unicode-prefix {
+      position: absolute;
+      top: 50%;
+      right: calc(100% + 10px);
+      color: var(--muted);
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size: clamp(18px, 2.4vw, 28px);
+      line-height: 1;
+      transform: translateY(-50%);
+    }
+
+    .hex-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      width: 100%;
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 500;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .glyph-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: var(--panel-size);
+      flex: 0 0 var(--panel-size);
+    }
+
+    .glyph-stage {
+      position: relative;
+      width: var(--panel-size);
+      aspect-ratio: 1;
+      transition: filter 220ms ease;
+    }
+
+    .glyph-stage.matched {
+      filter: drop-shadow(0 0 16px rgba(70, 255, 125, .95))
+        drop-shadow(0 0 42px rgba(70, 255, 125, .55));
+    }
+
+    .glyph {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      width: var(--panel-size);
+      aspect-ratio: 1;
+      padding-bottom: calc(var(--panel-size) * .08);
+      overflow: hidden;
+      font-family: "Noto Sans", "Noto Sans JP", "Noto Sans Symbols 2", "Noto Sans CJK JP",
+        "Segoe UI Symbol", "Yu Gothic", sans-serif;
+      font-size: calc(var(--panel-size) * .84);
+      font-weight: 400;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .target-glyph {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding-bottom: calc(var(--panel-size) * .08);
+      color: rgba(245, 245, 242, .12);
+      font-family: "Noto Sans", "Noto Sans JP", "Noto Sans Symbols 2", "Noto Sans CJK JP",
+        "Segoe UI Symbol", "Yu Gothic", sans-serif;
+      font-size: calc(var(--panel-size) * .84);
+      font-weight: 400;
+      line-height: 1;
+      pointer-events: none;
+      transition: color 180ms ease;
+    }
+
+    .challenge-active .target-glyph {
+      display: grid;
+    }
+
+    .glyph-stage.matched .target-glyph {
+      color: rgba(80, 255, 135, .5);
+    }
+
+    .glyph.code-fallback {
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size: calc(var(--panel-size) * .18);
+      letter-spacing: .06em;
+    }
+
+    .glyph.tofu {
+      font-family: "Noto Sans";
+    }
+
+    .hint {
+      min-height: 1.5em;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: .04em;
+      text-align: center;
+    }
+
+    .block-info {
+      position: fixed;
+      right: clamp(18px, 3vw, 42px);
+      bottom: clamp(18px, 3vw, 34px);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      max-width: min(48vw, 440px);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: right;
+    }
+
+    .block-name {
+      color: var(--white);
+      font-size: 14px;
+    }
+
+    .copy-button {
+      margin-top: 10px;
+      padding: 7px 12px;
+      border: 1px solid #555;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--background) 90%, white 7%);
+      color: var(--white);
+      font: inherit;
+      cursor: pointer;
+      transition: border-color 160ms ease, background-color 160ms ease;
+    }
+
+    .copy-button:hover {
+      border-color: var(--white);
+      background: color-mix(in srgb, var(--background) 78%, white 16%);
+    }
+
+    .copy-button:focus-visible {
+      outline: 2px solid #63b3ff;
+      outline-offset: 3px;
+    }
+
+    .toolbar {
+      position: fixed;
+      z-index: 10;
+      top: clamp(16px, 3vw, 34px);
+      right: clamp(18px, 3vw, 42px);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px;
+      border: 1px solid rgba(245, 245, 242, .18);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--background) 84%, transparent);
+      backdrop-filter: blur(10px);
+    }
+
+    .color-control {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding-left: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .color-control input {
+      width: 28px;
+      height: 28px;
+      padding: 2px;
+      border: 1px solid #555;
+      border-radius: 7px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .tool-button {
+      min-height: 30px;
+      padding: 0 11px;
+      border: 1px solid #555;
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--background) 88%, white 8%);
+      color: var(--white);
+      font: 12px/1 "Noto Sans", "Noto Sans CJK JP", sans-serif;
+      cursor: pointer;
+    }
+
+    .tool-button:hover,
+    .tool-button.active {
+      border-color: var(--white);
+      background: color-mix(in srgb, var(--background) 75%, white 16%);
+    }
+
+    .tool-button.active {
+      color: #78ff9d;
+    }
+
+    @media (max-width: 760px) {
+      :root {
+        --panel-size: min(82vw, 420px);
+      }
+
+      body {
+        align-items: center;
+      }
+
+      header {
+        width: var(--panel-size);
+      }
+
+      main {
+        flex-direction: column;
+        gap: 48px;
+      }
+
+      main::after {
+        display: none;
+      }
+
+      .toolbar {
+        max-width: calc(100vw - 24px);
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .cell::after {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar" aria-label="画面設定">
+    <label class="color-control">背景色
+      <input id="backgroundColor" type="color" value="#000000" aria-label="背景色を選択">
+    </label>
+    <button class="tool-button" id="randomizeButton" type="button">盤面ランダム</button>
+    <button class="tool-button" id="challengeButton" type="button" aria-pressed="false">ターゲット OFF</button>
+    <button class="tool-button" id="shareButton" type="button">SNS共有</button>
+  </div>
+
+  <header>
+    <h1>UniPanel</h1>
+  </header>
+
+  <main>
+    <section class="panel-area" aria-label="Unicode入力パネル">
+      <div class="grid" id="grid" role="grid" aria-label="4×4 ビットパネル"></div>
+      <div class="code-row" id="codeRow" aria-label="Unicode U+0000">
+        <span class="unicode-prefix" id="codepoint">U+</span>
+        <div class="hex-row" id="hexRow" aria-label="16進数">
+          <span>0</span><span>0</span><span>0</span><span>0</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="glyph-area" aria-label="文字プレビュー">
+      <div class="glyph-stage" id="glyphStage">
+        <div class="target-glyph" id="targetGlyph" aria-hidden="true"></div>
+        <div class="glyph" id="glyph" aria-live="polite"></div>
+      </div>
+      <p class="hint" id="hint">制御文字のため表示できません</p>
+    </section>
+  </main>
+
+  <aside class="block-info" aria-live="polite" aria-label="Unicode文字エリア">
+    <span>文字エリア</span>
+    <strong class="block-name" id="blockName">Basic Latin</strong>
+    <span id="blockRange">U+0000–U+007F</span>
+    <button class="copy-button" id="copyButton" type="button">文字をコピー</button>
+  </aside>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const hexDigits = [...document.querySelectorAll('#hexRow span')];
+    const codepoint = document.getElementById('codepoint');
+    const codeRow = document.getElementById('codeRow');
+    const glyph = document.getElementById('glyph');
+    const glyphStage = document.getElementById('glyphStage');
+    const targetGlyph = document.getElementById('targetGlyph');
+    const hint = document.getElementById('hint');
+    const blockName = document.getElementById('blockName');
+    const blockRange = document.getElementById('blockRange');
+    const copyButton = document.getElementById('copyButton');
+    const backgroundColor = document.getElementById('backgroundColor');
+    const randomizeButton = document.getElementById('randomizeButton');
+    const challengeButton = document.getElementById('challengeButton');
+    const shareButton = document.getElementById('shareButton');
+    const cellElements = Array.from({ length: 4 }, () => Array(4));
+    const storageKey = 'unipanel-settings-v1';
+    const urlParameters = new URLSearchParams(window.location.search);
+    const sharedCode = /^[0-9A-F]{4}$/i.test(urlParameters.get('code') ?? '')
+      ? urlParameters.get('code').toUpperCase()
+      : null;
+    const sharedBackground = /^[0-9A-F]{6}$/i.test(urlParameters.get('bg') ?? '')
+      ? `#${urlParameters.get('bg').toUpperCase()}`
+      : null;
+    let savedSettings = null;
+    try {
+      savedSettings = JSON.parse(localStorage.getItem(storageKey));
+    } catch {}
+
+    const hasSavedBits = Array.isArray(savedSettings?.bits)
+      && savedSettings.bits.length === 4
+      && savedSettings.bits.every(column =>
+        Array.isArray(column) && column.length === 4
+        && column.every(value => typeof value === 'boolean')
+      );
+    const sharedBits = sharedCode
+      ? [...sharedCode].map(digit => {
+        const value = Number.parseInt(digit, 16);
+        return [8, 4, 2, 1].map(mask => Boolean(value & mask));
+      })
+      : null;
+    const bits = sharedBits ?? (hasSavedBits
+      ? savedSettings.bits.map(column => [...column])
+      : Array.from(
+        { length: 4 },
+        () => Array.from({ length: 4 }, () => Math.random() < 0.5)
+      ));
+
+    const initialBackground = sharedBackground
+      ?? (/^#[0-9A-F]{6}$/i.test(savedSettings?.background ?? '')
+        ? savedSettings.background
+        : null);
+    if (initialBackground) {
+      backgroundColor.value = initialBackground;
+      document.documentElement.style.setProperty('--background', initialBackground);
+    }
+
+    function saveLocalSettings() {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify({
+          background: backgroundColor.value,
+          bits
+        }));
+      } catch {}
+    }
+
+    const unicodeBlocks = `
+0000..007F;Basic Latin
+0080..00FF;Latin-1 Supplement
+0100..017F;Latin Extended-A
+0180..024F;Latin Extended-B
+0250..02AF;IPA Extensions
+02B0..02FF;Spacing Modifier Letters
+0300..036F;Combining Diacritical Marks
+0370..03FF;Greek and Coptic
+0400..04FF;Cyrillic
+0500..052F;Cyrillic Supplement
+0530..058F;Armenian
+0590..05FF;Hebrew
+0600..06FF;Arabic
+0700..074F;Syriac
+0750..077F;Arabic Supplement
+0780..07BF;Thaana
+07C0..07FF;NKo
+0800..083F;Samaritan
+0840..085F;Mandaic
+0860..086F;Syriac Supplement
+0870..089F;Arabic Extended-B
+08A0..08FF;Arabic Extended-A
+0900..097F;Devanagari
+0980..09FF;Bengali
+0A00..0A7F;Gurmukhi
+0A80..0AFF;Gujarati
+0B00..0B7F;Oriya
+0B80..0BFF;Tamil
+0C00..0C7F;Telugu
+0C80..0CFF;Kannada
+0D00..0D7F;Malayalam
+0D80..0DFF;Sinhala
+0E00..0E7F;Thai
+0E80..0EFF;Lao
+0F00..0FFF;Tibetan
+1000..109F;Myanmar
+10A0..10FF;Georgian
+1100..11FF;Hangul Jamo
+1200..137F;Ethiopic
+1380..139F;Ethiopic Supplement
+13A0..13FF;Cherokee
+1400..167F;Unified Canadian Aboriginal Syllabics
+1680..169F;Ogham
+16A0..16FF;Runic
+1700..171F;Tagalog
+1720..173F;Hanunoo
+1740..175F;Buhid
+1760..177F;Tagbanwa
+1780..17FF;Khmer
+1800..18AF;Mongolian
+18B0..18FF;Unified Canadian Aboriginal Syllabics Extended
+1900..194F;Limbu
+1950..197F;Tai Le
+1980..19DF;New Tai Lue
+19E0..19FF;Khmer Symbols
+1A00..1A1F;Buginese
+1A20..1AAF;Tai Tham
+1AB0..1AFF;Combining Diacritical Marks Extended
+1B00..1B7F;Balinese
+1B80..1BBF;Sundanese
+1BC0..1BFF;Batak
+1C00..1C4F;Lepcha
+1C50..1C7F;Ol Chiki
+1C80..1C8F;Cyrillic Extended-C
+1C90..1CBF;Georgian Extended
+1CC0..1CCF;Sundanese Supplement
+1CD0..1CFF;Vedic Extensions
+1D00..1D7F;Phonetic Extensions
+1D80..1DBF;Phonetic Extensions Supplement
+1DC0..1DFF;Combining Diacritical Marks Supplement
+1E00..1EFF;Latin Extended Additional
+1F00..1FFF;Greek Extended
+2000..206F;General Punctuation
+2070..209F;Superscripts and Subscripts
+20A0..20CF;Currency Symbols
+20D0..20FF;Combining Diacritical Marks for Symbols
+2100..214F;Letterlike Symbols
+2150..218F;Number Forms
+2190..21FF;Arrows
+2200..22FF;Mathematical Operators
+2300..23FF;Miscellaneous Technical
+2400..243F;Control Pictures
+2440..245F;Optical Character Recognition
+2460..24FF;Enclosed Alphanumerics
+2500..257F;Box Drawing
+2580..259F;Block Elements
+25A0..25FF;Geometric Shapes
+2600..26FF;Miscellaneous Symbols
+2700..27BF;Dingbats
+27C0..27EF;Miscellaneous Mathematical Symbols-A
+27F0..27FF;Supplemental Arrows-A
+2800..28FF;Braille Patterns
+2900..297F;Supplemental Arrows-B
+2980..29FF;Miscellaneous Mathematical Symbols-B
+2A00..2AFF;Supplemental Mathematical Operators
+2B00..2BFF;Miscellaneous Symbols and Arrows
+2C00..2C5F;Glagolitic
+2C60..2C7F;Latin Extended-C
+2C80..2CFF;Coptic
+2D00..2D2F;Georgian Supplement
+2D30..2D7F;Tifinagh
+2D80..2DDF;Ethiopic Extended
+2DE0..2DFF;Cyrillic Extended-A
+2E00..2E7F;Supplemental Punctuation
+2E80..2EFF;CJK Radicals Supplement
+2F00..2FDF;Kangxi Radicals
+2FF0..2FFF;Ideographic Description Characters
+3000..303F;CJK Symbols and Punctuation
+3040..309F;Hiragana
+30A0..30FF;Katakana
+3100..312F;Bopomofo
+3130..318F;Hangul Compatibility Jamo
+3190..319F;Kanbun
+31A0..31BF;Bopomofo Extended
+31C0..31EF;CJK Strokes
+31F0..31FF;Katakana Phonetic Extensions
+3200..32FF;Enclosed CJK Letters and Months
+3300..33FF;CJK Compatibility
+3400..4DBF;CJK Unified Ideographs Extension A
+4DC0..4DFF;Yijing Hexagram Symbols
+4E00..9FFF;CJK Unified Ideographs
+A000..A48F;Yi Syllables
+A490..A4CF;Yi Radicals
+A4D0..A4FF;Lisu
+A500..A63F;Vai
+A640..A69F;Cyrillic Extended-B
+A6A0..A6FF;Bamum
+A700..A71F;Modifier Tone Letters
+A720..A7FF;Latin Extended-D
+A800..A82F;Syloti Nagri
+A830..A83F;Common Indic Number Forms
+A840..A87F;Phags-pa
+A880..A8DF;Saurashtra
+A8E0..A8FF;Devanagari Extended
+A900..A92F;Kayah Li
+A930..A95F;Rejang
+A960..A97F;Hangul Jamo Extended-A
+A980..A9DF;Javanese
+A9E0..A9FF;Myanmar Extended-B
+AA00..AA5F;Cham
+AA60..AA7F;Myanmar Extended-A
+AA80..AADF;Tai Viet
+AAE0..AAFF;Meetei Mayek Extensions
+AB00..AB2F;Ethiopic Extended-A
+AB30..AB6F;Latin Extended-E
+AB70..ABBF;Cherokee Supplement
+ABC0..ABFF;Meetei Mayek
+AC00..D7AF;Hangul Syllables
+D7B0..D7FF;Hangul Jamo Extended-B
+D800..DB7F;High Surrogates
+DB80..DBFF;High Private Use Surrogates
+DC00..DFFF;Low Surrogates
+E000..F8FF;Private Use Area
+F900..FAFF;CJK Compatibility Ideographs
+FB00..FB4F;Alphabetic Presentation Forms
+FB50..FDFF;Arabic Presentation Forms-A
+FE00..FE0F;Variation Selectors
+FE10..FE1F;Vertical Forms
+FE20..FE2F;Combining Half Marks
+FE30..FE4F;CJK Compatibility Forms
+FE50..FE6F;Small Form Variants
+FE70..FEFF;Arabic Presentation Forms-B
+FF00..FFEF;Halfwidth and Fullwidth Forms
+FFF0..FFFF;Specials`
+      .trim()
+      .split('\n')
+      .map(line => {
+        const [range, name] = line.split(';');
+        const [start, end] = range.split('..').map(part => Number.parseInt(part, 16));
+        return { start, end, name };
+      });
+
+    for (let row = 0; row < 4; row += 1) {
+      for (let col = 0; col < 4; col += 1) {
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'cell';
+        cell.style.setProperty('--x-pos', `${col * 33.333333}%`);
+        cell.style.setProperty('--y-pos', `${row * 33.333333}%`);
+        cell.classList.toggle('on', bits[col][row]);
+        cell.setAttribute('role', 'gridcell');
+        cell.setAttribute('aria-pressed', String(bits[col][row]));
+        cell.setAttribute('aria-label', `${col + 1}桁目、上から${row + 1}ビット目：${bits[col][row] ? 'ON' : 'OFF'}`);
+        cell.addEventListener('click', () => {
+          bits[col][row] = !bits[col][row];
+          cell.classList.toggle('on', bits[col][row]);
+          cell.setAttribute('aria-pressed', String(bits[col][row]));
+          cell.setAttribute('aria-label', `${col + 1}桁目、上から${row + 1}ビット目：${bits[col][row] ? 'ON' : 'OFF'}`);
+          updateOutput();
+          saveLocalSettings();
+        });
+        cellElements[col][row] = cell;
+        grid.appendChild(cell);
+      }
+    }
+
+    const baseGlyphFonts = `"Noto Sans", "Noto Sans JP", "Noto Sans Symbols 2",
+      "Noto Sans CJK JP", "Noto Sans Math", "Segoe UI Historic", "Segoe UI Symbol",
+      "Segoe UI Emoji", "Arial Unicode MS", "Nirmala UI", "Leelawadee UI", "Ebrima",
+      "Microsoft YaHei", "Malgun Gothic", "Yu Gothic", sans-serif`;
+    let currentGlyphValue = null;
+    let currentCopyText = '';
+    let glyphTransitionToken = 0;
+    let copyFeedbackTimer = null;
+    let challengeActive = false;
+    let targetValue = null;
+    let matchTimer = null;
+
+    const blockFontRules = [
+      [/CJK|Hiragana|Katakana|Bopomofo|Kanbun|Hangul/, 'Noto Sans JP'],
+      [/Mathematical|Number Forms|Arrows|Yijing/, 'Noto Sans Math'],
+      [/Symbols|Punctuation|Technical|Control Pictures|Optical Character|Enclosed|Box Drawing|Block Elements|Geometric|Dingbats|Braille/, 'Noto Sans Symbols 2'],
+      [/Arabic/, 'Noto Sans Arabic'], [/Syriac/, 'Noto Sans Syriac'],
+      [/Hebrew/, 'Noto Sans Hebrew'], [/Armenian/, 'Noto Sans Armenian'],
+      [/Thaana/, 'Noto Sans Thaana'], [/NKo/, 'Noto Sans NKo'],
+      [/Samaritan/, 'Noto Sans Samaritan'], [/Mandaic/, 'Noto Sans Mandaic'],
+      [/Devanagari/, 'Noto Sans Devanagari'], [/Bengali/, 'Noto Sans Bengali'],
+      [/Gurmukhi/, 'Noto Sans Gurmukhi'], [/Gujarati/, 'Noto Sans Gujarati'],
+      [/Oriya/, 'Noto Sans Oriya'], [/Tamil/, 'Noto Sans Tamil'],
+      [/Telugu/, 'Noto Sans Telugu'], [/Kannada/, 'Noto Sans Kannada'],
+      [/Malayalam/, 'Noto Sans Malayalam'], [/Sinhala/, 'Noto Sans Sinhala'],
+      [/Thai/, 'Noto Sans Thai'], [/Lao/, 'Noto Sans Lao'],
+      [/Tibetan/, 'Noto Sans Tibetan'], [/Myanmar/, 'Noto Sans Myanmar'],
+      [/Georgian/, 'Noto Sans Georgian'], [/Ethiopic/, 'Noto Sans Ethiopic'],
+      [/Cherokee/, 'Noto Sans Cherokee'],
+      [/Canadian Aboriginal/, 'Noto Sans Canadian Aboriginal'],
+      [/Ogham/, 'Noto Sans Ogham'], [/Runic/, 'Noto Sans Runic'],
+      [/Tagalog|Hanunoo|Buhid|Tagbanwa/, 'Noto Sans Tagalog'],
+      [/Khmer/, 'Noto Sans Khmer'], [/Mongolian/, 'Noto Sans Mongolian'],
+      [/Limbu/, 'Noto Sans Limbu'], [/Tai Le/, 'Noto Sans Tai Le'],
+      [/New Tai Lue/, 'Noto Sans New Tai Lue'], [/Buginese/, 'Noto Sans Buginese'],
+      [/Tai Tham/, 'Noto Sans Tai Tham'], [/Balinese/, 'Noto Sans Balinese'],
+      [/Sundanese/, 'Noto Sans Sundanese'], [/Batak/, 'Noto Sans Batak'],
+      [/Lepcha/, 'Noto Sans Lepcha'], [/Ol Chiki/, 'Noto Sans Ol Chiki'],
+      [/Vedic/, 'Noto Sans Devanagari'], [/Glagolitic/, 'Noto Sans Glagolitic'],
+      [/Coptic/, 'Noto Sans Coptic'], [/Tifinagh/, 'Noto Sans Tifinagh'],
+      [/Yi /, 'Noto Sans Yi'], [/Lisu/, 'Noto Sans Lisu'], [/Vai/, 'Noto Sans Vai'],
+      [/Bamum/, 'Noto Sans Bamum'], [/Syloti Nagri/, 'Noto Sans Syloti Nagri'],
+      [/Phags-pa/, 'Noto Sans Phags Pa'], [/Saurashtra/, 'Noto Sans Saurashtra'],
+      [/Kayah Li/, 'Noto Sans Kayah Li'], [/Rejang/, 'Noto Sans Rejang'],
+      [/Javanese/, 'Noto Sans Javanese'], [/Cham/, 'Noto Sans Cham'],
+      [/Tai Viet/, 'Noto Sans Tai Viet'], [/Meetei Mayek/, 'Noto Sans Meetei Mayek']
+    ];
+
+    function fontForBlock(block) {
+      return blockFontRules.find(([pattern]) => pattern.test(block?.name ?? ''))?.[1]
+        ?? 'Noto Sans';
+    }
+
+    function glyphSignature(text, fontStack) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      context.clearRect(0, 0, 256, 256);
+      context.fillStyle = '#fff';
+      context.font = `180px ${fontStack}`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(text, 128, 132);
+      const pixels = context.getImageData(0, 0, 256, 256).data;
+      let hash = 2166136261;
+      let ink = 0;
+      for (let index = 3; index < pixels.length; index += 4) {
+        if (pixels[index]) ink += 1;
+        hash ^= pixels[index];
+        hash = Math.imul(hash, 16777619);
+      }
+      return `${ink}:${hash >>> 0}`;
+    }
+
+    const targetRanges = [
+      [0x21, 0x7E],
+      [0x370, 0x3FF],
+      [0x400, 0x4FF],
+      [0x2190, 0x22FF],
+      [0x2500, 0x27BF],
+      [0x3041, 0x30FA],
+      [0x4E00, 0x9FFF],
+      [0xAC00, 0xD7A3]
+    ];
+
+    function isRenderableTarget(value) {
+      const character = String.fromCodePoint(value);
+      const signature = glyphSignature(character, baseGlyphFonts);
+      return !signature.startsWith('0:')
+        && signature !== glyphSignature('\u0378', baseGlyphFonts);
+    }
+
+    function chooseNextTarget(excludeValue = null) {
+      window.clearTimeout(matchTimer);
+      glyphStage.classList.remove('matched');
+      for (let attempt = 0; attempt < 300; attempt += 1) {
+        const [start, end] = targetRanges[Math.floor(Math.random() * targetRanges.length)];
+        const value = start + Math.floor(Math.random() * (end - start + 1));
+        if (value !== excludeValue && isRenderableTarget(value)) {
+          targetValue = value;
+          targetGlyph.textContent = String.fromCodePoint(value);
+          return;
+        }
+      }
+      targetValue = 0x41;
+      targetGlyph.textContent = 'A';
+    }
+
+    function checkChallengeMatch(value) {
+      if (!challengeActive || value !== targetValue || glyphStage.classList.contains('matched')) return;
+      glyphStage.classList.add('matched');
+      matchTimer = window.setTimeout(() => chooseNextTarget(value), 650);
+    }
+
+    function randomizeBoard() {
+      for (let col = 0; col < 4; col += 1) {
+        for (let row = 0; row < 4; row += 1) {
+          bits[col][row] = Math.random() < 0.5;
+          const cell = cellElements[col][row];
+          cell.classList.toggle('on', bits[col][row]);
+          cell.setAttribute('aria-pressed', String(bits[col][row]));
+          cell.setAttribute('aria-label', `${col + 1}桁目、上から${row + 1}ビット目：${bits[col][row] ? 'ON' : 'OFF'}`);
+        }
+      }
+      updateOutput();
+      saveLocalSettings();
+    }
+
+    backgroundColor.addEventListener('input', event => {
+      document.documentElement.style.setProperty('--background', event.target.value);
+      saveLocalSettings();
+    });
+
+    randomizeButton.addEventListener('click', randomizeBoard);
+
+    challengeButton.addEventListener('click', () => {
+      challengeActive = !challengeActive;
+      document.body.classList.toggle('challenge-active', challengeActive);
+      challengeButton.classList.toggle('active', challengeActive);
+      challengeButton.setAttribute('aria-pressed', String(challengeActive));
+      challengeButton.textContent = `ターゲット ${challengeActive ? 'ON' : 'OFF'}`;
+      glyphStage.classList.remove('matched');
+      window.clearTimeout(matchTimer);
+      if (challengeActive) chooseNextTarget(currentGlyphValue);
+    });
+
+    function currentHexCode() {
+      return bits.map(column => column.reduce(
+        (value, on, row) => value + (on ? 2 ** (3 - row) : 0),
+        0
+      ).toString(16).toUpperCase()).join('');
+    }
+
+    async function shareCurrentPanel() {
+      if (window.location.protocol === 'file:') {
+        shareButton.textContent = 'サーバー起動が必要';
+        window.setTimeout(() => { shareButton.textContent = 'SNS共有'; }, 1600);
+        return;
+      }
+
+      const shareUrl = new URL('/share', window.location.origin);
+      shareUrl.searchParams.set('code', currentHexCode());
+      shareUrl.searchParams.set('bg', backgroundColor.value.slice(1));
+      const shareData = {
+        title: 'UniPanel',
+        text: `UniPanel U+${currentHexCode()}`,
+        url: shareUrl.toString()
+      };
+
+      try {
+        if (navigator.share) {
+          await navigator.share(shareData);
+        } else {
+          await navigator.clipboard.writeText(shareData.url);
+          shareButton.textContent = 'URLをコピーしました';
+          window.setTimeout(() => { shareButton.textContent = 'SNS共有'; }, 1600);
+        }
+      } catch (error) {
+        if (error?.name !== 'AbortError') {
+          shareButton.textContent = '共有できませんでした';
+          window.setTimeout(() => { shareButton.textContent = 'SNS共有'; }, 1600);
+        }
+      }
+    }
+
+    shareButton.addEventListener('click', shareCurrentPanel);
+
+    function showTofuFallback(value, message) {
+      if (currentGlyphValue !== value) return;
+      glyph.classList.remove('code-fallback');
+      glyph.classList.add('tofu');
+      glyph.style.fontFamily = '"Noto Sans"';
+      glyph.textContent = '\u0378';
+      hint.textContent = message;
+    }
+
+    async function improveGlyphCoverage(value, hex, character, block) {
+      const family = fontForBlock(block);
+      const fontStack = `"${family}", ${baseGlyphFonts}`;
+      glyph.style.fontFamily = fontStack;
+      await document.fonts.ready;
+      await document.fonts.load(`400 180px "${family}"`, character).catch(() => []);
+      if (currentGlyphValue !== value) return;
+
+      const signature = glyphSignature(character, fontStack);
+      const tofuSignature = glyphSignature('\u0378', fontStack);
+      if (signature.startsWith('0:')) {
+        showTofuFallback(value, '不可視文字のため豆腐で表示しています');
+      } else if (value !== 0xFFFD && signature === tofuSignature) {
+        showTofuFallback(value, '対応グリフを読み込めないため豆腐で表示しています');
+      }
+    }
+
+    function renderFinalGlyph(value, hex, block, token) {
+      if (token !== glyphTransitionToken) return;
+      glyph.classList.remove('code-fallback', 'tofu');
+      glyph.style.fontFamily = baseGlyphFonts;
+
+      const isC0Control = value < 0x20;
+      const isC1Control = value >= 0x7F && value <= 0x9F;
+      const isSurrogate = value >= 0xD800 && value <= 0xDFFF;
+      const isNoncharacter = (value >= 0xFDD0 && value <= 0xFDEF) || value >= 0xFFFE;
+      if (isSurrogate) {
+        showTofuFallback(value, 'サロゲート領域のため豆腐で表示しています');
+      } else if (isC0Control) {
+        glyph.textContent = String.fromCodePoint(0x2400 + value);
+        hint.textContent = '制御文字をコントロール・ピクチャーで表示しています';
+      } else if (value === 0x7F) {
+        glyph.textContent = '\u2421';
+        hint.textContent = '制御文字 DEL をコントロール・ピクチャーで表示しています';
+      } else if (isC1Control) {
+        showTofuFallback(value, '表示できない制御文字のため豆腐で表示しています');
+      } else if (isNoncharacter) {
+        showTofuFallback(value, 'Unicodeの非文字コードポイントです');
+      } else {
+        const character = String.fromCodePoint(value);
+        glyph.textContent = character;
+        hint.textContent = '';
+        improveGlyphCoverage(value, hex, character, block);
+      }
+    }
+
+    function animateGlyphTransition(value, hex, block) {
+      const token = ++glyphTransitionToken;
+      currentGlyphValue = value;
+      currentCopyText = value >= 0xD800 && value <= 0xDFFF
+        ? ''
+        : String.fromCodePoint(value);
+      glyph.classList.remove('code-fallback', 'tofu');
+      glyph.style.fontFamily = baseGlyphFonts;
+      hint.textContent = '';
+      renderFinalGlyph(value, hex, block, token);
+    }
+
+    async function copyCurrentCharacter() {
+      if (!currentCopyText) {
+        copyButton.textContent = 'コピーできません';
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = currentCopyText;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.setAttribute('readonly', '');
+        document.body.appendChild(textarea);
+        textarea.select();
+        let copied = document.execCommand('copy');
+        textarea.remove();
+
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(currentCopyText);
+            copied = true;
+          }
+        } catch {}
+        copyButton.textContent = copied ? 'コピーしました' : 'コピーできません';
+      }
+      window.clearTimeout(copyFeedbackTimer);
+      copyFeedbackTimer = window.setTimeout(() => {
+        copyButton.textContent = '文字をコピー';
+      }, 1200);
+    }
+
+    copyButton.addEventListener('click', copyCurrentCharacter);
+
+    function updateOutput() {
+      const digits = bits.map(column =>
+        column.reduce((value, on, row) => value + (on ? 2 ** (3 - row) : 0), 0)
+      );
+      const hex = digits.map(value => value.toString(16).toUpperCase());
+      hexDigits.forEach((element, index) => {
+        element.textContent = hex[index];
+      });
+
+      const value = Number.parseInt(hex.join(''), 16);
+      codepoint.textContent = 'U+';
+      codeRow.setAttribute('aria-label', `Unicode U+${hex.join('')}`);
+
+      const block = unicodeBlocks.find(item => value >= item.start && value <= item.end);
+      blockName.textContent = block?.name ?? 'No Block';
+      blockRange.textContent = block
+        ? `U+${block.start.toString(16).toUpperCase().padStart(4, '0')}–U+${block.end.toString(16).toUpperCase().padStart(4, '0')}`
+        : 'Unicodeブロック未割り当て';
+
+      animateGlyphTransition(value, hex.join(''), block);
+      checkChallengeMatch(value);
+    }
+
+    updateOutput();
+  </script>
+</body>
+</html>
