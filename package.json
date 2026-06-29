@@ -1,0 +1,16 @@
+{
+  "name": "unipanel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A 4x4 Unicode panel with dynamic social sharing images.",
+  "scripts": {
+    "start": "node server.cjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "sharp": "^0.34.0"
+  }
+}
+
