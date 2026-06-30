@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="マス目を塗って、Unicodeで知らん文字を出すおもちゃ。">
+  <meta name="description" content="4×4のビットパネルでUnicode文字を作り、文字コードを確認・共有できるインタラクティブツールです。">
   <meta name="application-name" content="UniPanel">
   <meta name="theme-color" content="#000000">
   <meta name="robots" content="index, follow">
@@ -307,7 +307,7 @@
       border-radius: var(--button-radius);
       background: color-mix(in srgb, var(--background) 90%, white 7%);
       color: var(--white);
-      font: 600 12px/1 var(--mono-font);
+      font: 600 13px/1 var(--mono-font);
       cursor: pointer;
       transition: border-color 160ms ease, background-color 160ms ease;
     }
@@ -349,7 +349,7 @@
       min-height: 38px;
       padding-left: 7px;
       color: var(--muted);
-      font: 600 12px/1 var(--mono-font);
+      font: 600 13px/1 var(--mono-font);
     }
 
     .color-control input {
@@ -370,7 +370,7 @@
       background: color-mix(in srgb, var(--background) 88%, white 8%);
       color: var(--white);
       font-family: var(--mono-font);
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
       line-height: 1;
       cursor: pointer;
@@ -458,8 +458,8 @@
 
     .streak-hints {
       color: #ffd84d;
-      font-size: 11px;
-      transform: translateY(5px);
+      font-size: 12px;
+      transform: translateY(2px);
     }
 
     .challenge-hint {
@@ -483,6 +483,14 @@
 
     .challenge-actions .tool-button {
       min-height: 44px;
+    }
+
+    #hintButton {
+      color: #ffd84d;
+    }
+
+    #giveUpButton {
+      color: #ff6262;
     }
 
     .copyright {
@@ -542,14 +550,14 @@
       .tool-button {
         min-height: 44px;
         padding: 0 10px;
-        font-size: 11px;
+        font-size: 12px;
       }
 
       .color-control {
         gap: 4px;
         min-height: 44px;
         padding-left: 6px;
-        font-size: 11px;
+        font-size: 12px;
       }
 
       .color-control input {
@@ -594,7 +602,7 @@
       .copy-button {
         min-height: 44px;
         padding: 0 11px;
-        font-size: 11px;
+        font-size: 12px;
       }
 
       .challenge-menu {
