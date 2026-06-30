@@ -55,7 +55,7 @@
 
     header {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: 14px;
       width: calc(var(--panel-size) * 2 + var(--layout-gap));
       margin-bottom: clamp(28px, 5vh, 60px);
@@ -205,6 +205,12 @@
         drop-shadow(0 0 42px rgba(70, 255, 125, .55));
     }
 
+    .glyph-stage.matched .glyph {
+      color: var(--white);
+      text-shadow: 0 0 12px rgba(70, 255, 125, .95),
+        0 0 32px rgba(70, 255, 125, .7);
+    }
+
     .glyph {
       position: absolute;
       inset: 0;
@@ -241,7 +247,7 @@
     }
 
     .glyph-stage.matched .target-glyph {
-      color: rgba(80, 255, 135, .5);
+      color: rgba(245, 245, 242, .12);
     }
 
     .glyph.code-fallback {
@@ -304,14 +310,21 @@
       outline-offset: 3px;
     }
 
+    .block-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .block-actions .copy-button {
+      margin-top: 0;
+    }
+
     .toolbar {
-      position: fixed;
-      z-index: 10;
-      top: clamp(16px, 3vw, 34px);
-      right: clamp(18px, 3vw, 42px);
       display: flex;
       align-items: center;
       gap: 8px;
+      margin-left: auto;
       padding: 7px;
       border: 1px solid rgba(245, 245, 242, .18);
       border-radius: 12px;
@@ -361,22 +374,119 @@
       color: #78ff9d;
     }
 
+    .tool-button:disabled {
+      opacity: .38;
+      cursor: not-allowed;
+    }
+
+    .challenge-menu {
+      position: fixed;
+      z-index: 30;
+      top: 50%;
+      left: 50%;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      width: min(230px, 82vw);
+      padding: 18px;
+      border: 1px solid rgba(245, 245, 242, .34);
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--background) 82%, transparent);
+      box-shadow: 0 14px 50px rgba(0, 0, 0, .38);
+      backdrop-filter: blur(14px);
+      transform: translate(-50%, -50%);
+    }
+
+    .challenge-menu.open {
+      display: flex;
+    }
+
+    .challenge-menu-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .challenge-menu-title {
+      margin: 0;
+      font: 600 14px/1 ui-monospace, "Cascadia Mono", Consolas, monospace;
+      letter-spacing: .08em;
+    }
+
+    .challenge-close {
+      width: 25px;
+      height: 25px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .streak-display {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 3px;
+      color: #78ff9d;
+      font: 600 20px/1 ui-monospace, "Cascadia Mono", Consolas, monospace;
+      text-align: center;
+    }
+
+    .streak-hints {
+      color: #ffd84d;
+      font-size: 11px;
+      transform: translateY(5px);
+    }
+
+    .challenge-hint {
+      min-height: 7.2em;
+      margin: 0;
+      color: var(--muted);
+      font: 500 12px/1.35 ui-monospace, "Cascadia Mono", Consolas, monospace;
+      text-align: center;
+      white-space: pre-line;
+    }
+
+    .challenge-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .challenge-actions .tool-button:first-child {
+      grid-column: 1 / -1;
+    }
+
     @media (max-width: 760px) {
       :root {
-        --panel-size: min(82vw, 420px);
+        --panel-size: max(140px, min(72vw, calc(50dvh - 105px), 320px));
       }
 
       body {
         align-items: center;
+        justify-content: center;
+        height: 100dvh;
+        padding: 8px 12px;
+        overflow: hidden;
       }
 
       header {
-        width: var(--panel-size);
+        align-items: center;
+        width: min(94vw, 680px);
+        margin-bottom: 8px;
+      }
+
+      h1 {
+        font-size: 22px;
       }
 
       main {
+        align-items: center;
         flex-direction: column;
-        gap: 48px;
+        gap: 6px;
       }
 
       main::after {
@@ -384,9 +494,69 @@
       }
 
       .toolbar {
-        max-width: calc(100vw - 24px);
+        gap: 4px;
+        max-width: calc(100vw - 140px);
+        margin-left: auto;
+        padding: 4px;
+        border-radius: 9px;
         flex-wrap: wrap;
         justify-content: flex-end;
+      }
+
+      .tool-button {
+        min-height: 25px;
+        padding: 0 7px;
+        font-size: 10px;
+      }
+
+      .color-control {
+        gap: 4px;
+        padding-left: 2px;
+        font-size: 10px;
+      }
+
+      .color-control input {
+        width: 24px;
+        height: 24px;
+      }
+
+      .code-row {
+        margin-top: 6px;
+      }
+
+      .hex-row {
+        font-size: clamp(22px, 7vw, 30px);
+      }
+
+      .hint {
+        margin-top: 3px;
+        font-size: 10px;
+      }
+
+      .block-info {
+        right: 8px;
+        bottom: 8px;
+        max-width: 62vw;
+        font-size: 10px;
+      }
+
+      .block-name {
+        font-size: 12px;
+      }
+
+      .block-actions {
+        gap: 5px;
+        margin-top: 5px;
+      }
+
+      .copy-button {
+        padding: 5px 8px;
+        font-size: 10px;
+      }
+
+      .challenge-menu {
+        width: min(210px, 76vw);
+        padding: 13px;
       }
     }
 
@@ -398,17 +568,15 @@
   </style>
 </head>
 <body>
-  <div class="toolbar" aria-label="画面設定">
-    <label class="color-control">背景色
-      <input id="backgroundColor" type="color" value="#000000" aria-label="背景色を選択">
-    </label>
-    <button class="tool-button" id="randomizeButton" type="button">盤面ランダム</button>
-    <button class="tool-button" id="challengeButton" type="button" aria-pressed="false">ターゲット OFF</button>
-    <button class="tool-button" id="shareButton" type="button">Xで投稿</button>
-  </div>
-
   <header>
     <h1>UniPanel</h1>
+    <div class="toolbar" aria-label="画面設定">
+      <button class="tool-button" id="randomizeButton" type="button">RANDOM</button>
+      <button class="tool-button" id="challengeButton" type="button" aria-pressed="false">TARGET</button>
+      <label class="color-control">COLOR
+        <input id="backgroundColor" type="color" value="#000000" aria-label="背景色を選択">
+      </label>
+    </div>
   </header>
 
   <main>
@@ -431,11 +599,30 @@
     </section>
   </main>
 
+  <section class="challenge-menu" id="challengeMenu" aria-label="ターゲットメニュー">
+    <div class="challenge-menu-header">
+      <h2 class="challenge-menu-title">TARGET MODE</h2>
+      <button class="challenge-close" id="challengeClose" type="button" aria-label="メニューを閉じる">×</button>
+    </div>
+    <div class="streak-display" id="streakDisplay">
+      STREAK <span id="streakValue">0</span><small class="streak-hints" id="streakHints">（0）</small>
+    </div>
+    <p class="challenge-hint" id="challengeHint">MATCH THE CHARACTER</p>
+    <div class="challenge-actions">
+      <button class="tool-button" id="newTargetButton" type="button">NEW TARGET</button>
+      <button class="tool-button" id="hintButton" type="button">HINT</button>
+      <button class="tool-button" id="giveUpButton" type="button">GIVE UP</button>
+    </div>
+  </section>
+
   <aside class="block-info" aria-live="polite" aria-label="Unicode文字エリア">
     <span>文字エリア</span>
     <strong class="block-name" id="blockName">Basic Latin</strong>
     <span id="blockRange">U+0000–U+007F</span>
-    <button class="copy-button" id="copyButton" type="button">文字をコピー</button>
+    <div class="block-actions">
+      <button class="copy-button" id="copyButton" type="button">COPY</button>
+      <button class="copy-button" id="shareButton" type="button">𝕏POST</button>
+    </div>
   </aside>
 
   <script>
@@ -454,6 +641,14 @@
     const randomizeButton = document.getElementById('randomizeButton');
     const challengeButton = document.getElementById('challengeButton');
     const shareButton = document.getElementById('shareButton');
+    const challengeMenu = document.getElementById('challengeMenu');
+    const challengeClose = document.getElementById('challengeClose');
+    const streakValue = document.getElementById('streakValue');
+    const streakHints = document.getElementById('streakHints');
+    const challengeHint = document.getElementById('challengeHint');
+    const newTargetButton = document.getElementById('newTargetButton');
+    const hintButton = document.getElementById('hintButton');
+    const giveUpButton = document.getElementById('giveUpButton');
     const cellElements = Array.from({ length: 4 }, () => Array(4));
     const storageKey = 'unipanel-settings-v1';
     const urlParameters = new URLSearchParams(window.location.search);
@@ -500,7 +695,9 @@
       try {
         localStorage.setItem(storageKey, JSON.stringify({
           background: backgroundColor.value,
-          bits
+          bits,
+          winStreak,
+          streakHintCount
         }));
       } catch {}
     }
@@ -714,7 +911,21 @@ FFF0..FFFF;Specials`
     let copyFeedbackTimer = null;
     let challengeActive = false;
     let targetValue = null;
-    let matchTimer = null;
+    let targetSolved = false;
+    let winStreak = Number.isInteger(savedSettings?.winStreak) && savedSettings.winStreak >= 0
+      ? savedSettings.winStreak
+      : 0;
+    let streakHintCount = Number.isInteger(savedSettings?.streakHintCount) && savedSettings.streakHintCount >= 0
+      ? savedSettings.streakHintCount
+      : 0;
+    const revealedHintCells = new Set();
+
+    function updateStreakDisplay() {
+      streakValue.textContent = String(winStreak);
+      streakHints.textContent = `（${streakHintCount}）`;
+    }
+
+    updateStreakDisplay();
 
     const blockFontRules = [
       [/CJK|Hiragana|Katakana|Bopomofo|Kanbun|Hangul/, 'Noto Sans JP'],
@@ -779,6 +990,35 @@ FFF0..FFFF;Specials`
       return `${ink}:${hash >>> 0}`;
     }
 
+    function fitGlyphToPanel(element, character, fontStack = baseGlyphFonts) {
+      const panelSize = element.clientWidth || Number.parseFloat(getComputedStyle(element).width) || 420;
+      const baseSize = panelSize * 0.84;
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      context.font = `400 ${baseSize}px ${fontStack}`;
+      const metrics = context.measureText(character);
+      const inkWidth = Math.max(
+        metrics.width,
+        (metrics.actualBoundingBoxLeft ?? 0) + (metrics.actualBoundingBoxRight ?? 0)
+      );
+      const inkHeight = (metrics.actualBoundingBoxAscent ?? baseSize * 0.8)
+        + (metrics.actualBoundingBoxDescent ?? baseSize * 0.2);
+      const scale = Math.min(
+        1,
+        inkWidth > 0 ? panelSize * 0.88 / inkWidth : 1,
+        inkHeight > 0 ? panelSize * 0.78 / inkHeight : 1
+      );
+      element.style.fontSize = `${Math.max(24, baseSize * scale)}px`;
+    }
+
+    function setPanelGlyph(element, character, fontStack = baseGlyphFonts) {
+      element.textContent = character;
+      fitGlyphToPanel(element, character, fontStack);
+      bundledFontReady.then(() => {
+        if (element.textContent === character) fitGlyphToPanel(element, character, fontStack);
+      });
+    }
+
     const targetRanges = [
       [0x21, 0x7E],
       [0x370, 0x3FF],
@@ -798,8 +1038,12 @@ FFF0..FFFF;Specials`
     }
 
     async function chooseNextTarget(excludeValue = null) {
-      window.clearTimeout(matchTimer);
       glyphStage.classList.remove('matched');
+      targetSolved = false;
+      revealedHintCells.clear();
+      hintButton.disabled = false;
+      challengeHint.textContent = 'MATCH THE CHARACTER';
+      updateStreakDisplay();
       await bundledFontReady;
       if (!challengeActive) return;
       for (let attempt = 0; attempt < 300; attempt += 1) {
@@ -807,18 +1051,55 @@ FFF0..FFFF;Specials`
         const value = start + Math.floor(Math.random() * (end - start + 1));
         if (value !== excludeValue && isRenderableTarget(value)) {
           targetValue = value;
-          targetGlyph.textContent = String.fromCodePoint(value);
+          setPanelGlyph(targetGlyph, String.fromCodePoint(value), baseGlyphFonts);
           return;
         }
       }
       targetValue = 0x41;
-      targetGlyph.textContent = 'A';
+      setPanelGlyph(targetGlyph, 'A', baseGlyphFonts);
+    }
+
+    function renderHintGrid() {
+      if (targetValue === null) return;
+      const code = targetValue.toString(16).toUpperCase().padStart(4, '0');
+      const rows = Array.from({ length: 4 }, (_, row) => (
+        Array.from({ length: 4 }, (_, col) => {
+          const index = col * 4 + row;
+          if (!revealedHintCells.has(index)) return '·';
+          const isOn = Boolean(Number.parseInt(code[col], 16) & (8 >> row));
+          return isOn ? '■' : '□';
+        }).join(' ')
+      ));
+      challengeHint.textContent = `HINT ${revealedHintCells.size}/12\n${rows.join('\n')}`;
     }
 
     function checkChallengeMatch(value) {
-      if (!challengeActive || value !== targetValue || glyphStage.classList.contains('matched')) return;
-      glyphStage.classList.add('matched');
-      matchTimer = window.setTimeout(() => chooseNextTarget(value), 650);
+      const matched = challengeActive && value === targetValue;
+      glyphStage.classList.toggle('matched', matched);
+      if (matched && !targetSolved) {
+        targetSolved = true;
+        winStreak += 1;
+        updateStreakDisplay();
+        saveLocalSettings();
+        challengeHint.textContent = 'MATCH!';
+        hintButton.disabled = true;
+      }
+    }
+
+    function setBoardToValue(value) {
+      const code = value.toString(16).toUpperCase().padStart(4, '0');
+      for (let col = 0; col < 4; col += 1) {
+        const digit = Number.parseInt(code[col], 16);
+        for (let row = 0; row < 4; row += 1) {
+          bits[col][row] = Boolean(digit & (8 >> row));
+          const cell = cellElements[col][row];
+          cell.classList.toggle('on', bits[col][row]);
+          cell.setAttribute('aria-pressed', String(bits[col][row]));
+          cell.setAttribute('aria-label', `${col + 1}桁目、上から${row + 1}ビット目：${bits[col][row] ? 'ON' : 'OFF'}`);
+        }
+      }
+      updateOutput();
+      saveLocalSettings();
     }
 
     function randomizeBoard() {
@@ -843,14 +1124,61 @@ FFF0..FFFF;Specials`
     randomizeButton.addEventListener('click', randomizeBoard);
 
     challengeButton.addEventListener('click', () => {
+      if (challengeActive && !challengeMenu.classList.contains('open')) {
+        challengeMenu.classList.add('open');
+        return;
+      }
       challengeActive = !challengeActive;
       document.body.classList.toggle('challenge-active', challengeActive);
       challengeButton.classList.toggle('active', challengeActive);
       challengeButton.setAttribute('aria-pressed', String(challengeActive));
-      challengeButton.textContent = `ターゲット ${challengeActive ? 'ON' : 'OFF'}`;
+      challengeButton.textContent = 'TARGET';
       glyphStage.classList.remove('matched');
-      window.clearTimeout(matchTimer);
-      if (challengeActive) chooseNextTarget(currentGlyphValue);
+      challengeMenu.classList.toggle('open', challengeActive);
+      if (challengeActive) {
+        if (targetValue === null) chooseNextTarget(currentGlyphValue);
+        else checkChallengeMatch(currentGlyphValue);
+      }
+    });
+
+    challengeClose.addEventListener('click', () => {
+      challengeMenu.classList.remove('open');
+    });
+
+    newTargetButton.addEventListener('click', () => {
+      if (targetValue !== null && !targetSolved) {
+        winStreak = 0;
+        streakHintCount = 0;
+        updateStreakDisplay();
+        saveLocalSettings();
+      }
+      chooseNextTarget(currentGlyphValue);
+    });
+
+    hintButton.addEventListener('click', () => {
+      if (targetValue === null || targetSolved || revealedHintCells.size >= 12) return;
+      const candidates = Array.from(
+        { length: 16 },
+        (_, index) => index
+      ).filter(index => !revealedHintCells.has(index));
+      const index = candidates[Math.floor(Math.random() * candidates.length)];
+      revealedHintCells.add(index);
+      streakHintCount += 1;
+      updateStreakDisplay();
+      renderHintGrid();
+      hintButton.disabled = revealedHintCells.size >= 12;
+      saveLocalSettings();
+    });
+
+    giveUpButton.addEventListener('click', () => {
+      if (targetValue === null) return;
+      winStreak = 0;
+      streakHintCount = 0;
+      targetSolved = true;
+      updateStreakDisplay();
+      challengeHint.textContent = `GIVE UP · U+${targetValue.toString(16).toUpperCase().padStart(4, '0')}`;
+      hintButton.disabled = true;
+      setBoardToValue(targetValue);
     });
 
     function currentHexCode() {
@@ -886,7 +1214,7 @@ FFF0..FFFF;Specials`
       glyph.classList.remove('code-fallback');
       glyph.classList.add('tofu');
       glyph.style.fontFamily = '"UniPanel Noto Sans JP", "Noto Sans JP", "Noto Sans"';
-      glyph.textContent = '\u0378';
+      setPanelGlyph(glyph, '\u0378', primaryGlyphFonts);
       hint.textContent = message;
     }
 
@@ -894,9 +1222,11 @@ FFF0..FFFF;Specials`
       const family = fontForBlock(block);
       const fontStack = `${primaryGlyphFonts}, "${family}", ${supplementalGlyphFonts}`;
       glyph.style.fontFamily = fontStack;
+      fitGlyphToPanel(glyph, character, fontStack);
       await document.fonts.ready;
       await document.fonts.load(`400 180px "${family}"`, character).catch(() => []);
       if (currentGlyphValue !== value) return;
+      fitGlyphToPanel(glyph, character, fontStack);
 
       const signature = glyphSignature(character, fontStack);
       const tofuSignature = glyphSignature('\u0378', fontStack);
@@ -919,10 +1249,10 @@ FFF0..FFFF;Specials`
       if (isSurrogate) {
         showTofuFallback(value, 'サロゲート領域のため豆腐で表示しています');
       } else if (isC0Control) {
-        glyph.textContent = String.fromCodePoint(0x2400 + value);
+        setPanelGlyph(glyph, String.fromCodePoint(0x2400 + value), baseGlyphFonts);
         hint.textContent = '制御文字をコントロール・ピクチャーで表示しています';
       } else if (value === 0x7F) {
-        glyph.textContent = '\u2421';
+        setPanelGlyph(glyph, '\u2421', baseGlyphFonts);
         hint.textContent = '制御文字 DEL をコントロール・ピクチャーで表示しています';
       } else if (isC1Control) {
         showTofuFallback(value, '表示できない制御文字のため豆腐で表示しています');
@@ -930,7 +1260,7 @@ FFF0..FFFF;Specials`
         showTofuFallback(value, 'Unicodeの非文字コードポイントです');
       } else {
         const character = String.fromCodePoint(value);
-        glyph.textContent = character;
+        setPanelGlyph(glyph, character, baseGlyphFonts);
         hint.textContent = '';
         improveGlyphCoverage(value, hex, character, block);
       }
@@ -950,7 +1280,7 @@ FFF0..FFFF;Specials`
 
     async function copyCurrentCharacter() {
       if (!currentCopyText) {
-        copyButton.textContent = 'コピーできません';
+        copyButton.textContent = 'COPY FAILED';
       } else {
         const textarea = document.createElement('textarea');
         textarea.value = currentCopyText;
@@ -968,11 +1298,11 @@ FFF0..FFFF;Specials`
             copied = true;
           }
         } catch {}
-        copyButton.textContent = copied ? 'コピーしました' : 'コピーできません';
+        copyButton.textContent = copied ? 'COPIED' : 'COPY FAILED';
       }
       window.clearTimeout(copyFeedbackTimer);
       copyFeedbackTimer = window.setTimeout(() => {
-        copyButton.textContent = '文字をコピー';
+        copyButton.textContent = 'COPY';
       }, 1200);
     }
 
