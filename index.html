@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="4×4のマス目を塗ったり塗らなかったりして知らん文字を出すおもちゃ">
+  <meta name="description" content="4×4のマス目を塗ったり塗らなかったりしてUnicodeの知らん文字を出すおもちゃ">
   <meta name="application-name" content="UniPanel">
   <meta name="theme-color" content="#000000">
   <meta name="robots" content="index, follow">
@@ -27,7 +27,7 @@
       --white: #f5f5f2;
       --muted: #888;
       --background: #000000;
-      --ui-font: "UniPanel Noto Sans JP", "Noto Sans JP", "Noto Sans", sans-serif;
+      --ui-font: "UniPanel Noto Sans JP", "Noto Sans JP", "Noto Sans", "Hiragino Sans", "Hiragino Kaku Gothic ProN", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
       --mono-font: "Noto Sans Mono CJK JP", "Noto Sans Mono", "Cascadia Mono", Consolas, "SFMono-Regular", ui-monospace, monospace;
       --button-radius: 6px;
     }
@@ -972,7 +972,8 @@ FFF0..FFFF;Specials`
 
     const primaryGlyphFonts = `"UniPanel Noto Sans JP", "Noto Sans JP", "Noto Sans CJK JP", "Noto Sans"`;
     const supplementalGlyphFonts = `"Noto Sans Symbols 2", "Noto Sans Math"`;
-    const baseGlyphFonts = `${primaryGlyphFonts}, ${supplementalGlyphFonts}`;
+    const systemSansFonts = `"Hiragino Sans", "Hiragino Kaku Gothic ProN", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif`;
+    const baseGlyphFonts = `${primaryGlyphFonts}, ${supplementalGlyphFonts}, ${systemSansFonts}`;
     const bundledFontReady = document.fonts
       .load('400 180px "UniPanel Noto Sans JP"')
       .catch(() => []);
@@ -1059,7 +1060,7 @@ FFF0..FFFF;Specials`
         block: resolvedBlock,
         character: String.fromCodePoint(value),
         family,
-        fontStack: `${primaryGlyphFonts}, "${family}", ${supplementalGlyphFonts}`
+        fontStack: `${primaryGlyphFonts}, "${family}", ${supplementalGlyphFonts}, ${systemSansFonts}`
       };
     }
 
@@ -1330,8 +1331,9 @@ FFF0..FFFF;Specials`
       if (currentGlyphValue !== value) return;
       glyph.classList.remove('code-fallback');
       glyph.classList.add('tofu');
-      glyph.style.fontFamily = '"UniPanel Noto Sans JP", "Noto Sans JP", "Noto Sans"';
-      setPanelGlyph(glyph, '\u0378', primaryGlyphFonts);
+      const tofuFonts = `"UniPanel Noto Sans JP", ${systemSansFonts}`;
+      glyph.style.fontFamily = tofuFonts;
+      setPanelGlyph(glyph, '\u0378', tofuFonts);
       hint.textContent = message;
     }
 
