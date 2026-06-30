@@ -237,6 +237,7 @@
       font-weight: 400;
       line-height: 1;
       text-align: center;
+      pointer-events: none;
     }
 
     .target-glyph {
@@ -283,6 +284,7 @@
 
     .block-info {
       position: fixed;
+      z-index: 20;
       right: clamp(18px, 3vw, 42px);
       bottom: clamp(18px, 3vw, 34px);
       display: flex;
@@ -334,6 +336,8 @@
     }
 
     .toolbar {
+      position: relative;
+      z-index: 20;
       display: flex;
       align-items: center;
       gap: 8px;
