@@ -202,6 +202,7 @@
       position: relative;
       width: var(--panel-size);
       aspect-ratio: 1;
+      overflow: visible;
       transition: filter 220ms ease;
     }
 
@@ -223,10 +224,10 @@
       place-items: center;
       width: var(--panel-size);
       aspect-ratio: 1;
-      padding-bottom: calc(var(--panel-size) * .08);
-      overflow: hidden;
+      padding-bottom: calc(var(--panel-size) * .04);
+      overflow: visible;
       font-family: var(--ui-font);
-      font-size: calc(var(--panel-size) * .84);
+      font-size: calc(var(--panel-size) * .88);
       font-weight: 400;
       line-height: 1;
       text-align: center;
@@ -237,10 +238,10 @@
       inset: 0;
       display: none;
       place-items: center;
-      padding-bottom: calc(var(--panel-size) * .08);
+      padding-bottom: calc(var(--panel-size) * .04);
       color: rgba(245, 245, 242, .12);
       font-family: var(--ui-font);
-      font-size: calc(var(--panel-size) * .84);
+      font-size: calc(var(--panel-size) * .88);
       font-weight: 400;
       line-height: 1;
       pointer-events: none;
@@ -950,6 +951,7 @@ FFF0..FFFF;Specials`
     const bundledFontReady = document.fonts
       .load('400 180px "UniPanel Noto Sans JP"')
       .catch(() => []);
+    const glyphFitState = new WeakMap();
     let currentGlyphValue = null;
     let currentCopyText = '';
     let glyphTransitionToken = 0;
@@ -1037,7 +1039,7 @@ FFF0..FFFF;Specials`
 
     function fitGlyphToPanel(element, character, fontStack = baseGlyphFonts) {
       const panelSize = element.clientWidth || Number.parseFloat(getComputedStyle(element).width) || 420;
-      const baseSize = panelSize * 0.84;
+      const baseSize = panelSize * 0.88;
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       context.font = `400 ${baseSize}px ${fontStack}`;
@@ -1057,11 +1059,26 @@ FFF0..FFFF;Specials`
     }
 
     function setPanelGlyph(element, character, fontStack = baseGlyphFonts) {
+      glyphFitState.set(element, { character, fontStack });
       element.textContent = character;
       fitGlyphToPanel(element, character, fontStack);
       bundledFontReady.then(() => {
         if (element.textContent === character) fitGlyphToPanel(element, character, fontStack);
       });
+    }
+
+    function refitVisibleGlyphs() {
+      [glyph, targetGlyph].forEach(element => {
+        const state = glyphFitState.get(element);
+        if (state) fitGlyphToPanel(element, state.character, state.fontStack);
+      });
+    }
+
+    if ('ResizeObserver' in window) {
+      const glyphResizeObserver = new ResizeObserver(refitVisibleGlyphs);
+      glyphResizeObserver.observe(glyphStage);
+    } else {
+      window.addEventListener('resize', refitVisibleGlyphs);
     }
 
     const targetRanges = [
@@ -1267,6 +1284,7 @@ FFF0..FFFF;Specials`
       const family = fontForBlock(block);
       const fontStack = `${primaryGlyphFonts}, "${family}", ${supplementalGlyphFonts}`;
       glyph.style.fontFamily = fontStack;
+      glyphFitState.set(glyph, { character, fontStack });
       fitGlyphToPanel(glyph, character, fontStack);
       await document.fonts.ready;
       await document.fonts.load(`400 180px "${family}"`, character).catch(() => []);
