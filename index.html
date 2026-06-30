@@ -743,7 +743,10 @@
           background: backgroundColor.value,
           bits,
           winStreak,
-          streakHintCount
+          streakHintCount,
+          targetValue,
+          targetSolved,
+          revealedHintCells: [...revealedHintCells]
         }));
       } catch {}
     }
@@ -957,15 +960,26 @@ FFF0..FFFF;Specials`
     let glyphTransitionToken = 0;
     let copyFeedbackTimer = null;
     let challengeActive = false;
-    let targetValue = null;
-    let targetSolved = false;
+    let targetValue = Number.isInteger(savedSettings?.targetValue)
+      && savedSettings.targetValue >= 0
+      && savedSettings.targetValue <= 0xFFFF
+      && !(savedSettings.targetValue >= 0xD800 && savedSettings.targetValue <= 0xDFFF)
+      ? savedSettings.targetValue
+      : null;
+    let targetSolved = targetValue !== null && savedSettings?.targetSolved === true;
     let winStreak = Number.isInteger(savedSettings?.winStreak) && savedSettings.winStreak >= 0
       ? savedSettings.winStreak
       : 0;
     let streakHintCount = Number.isInteger(savedSettings?.streakHintCount) && savedSettings.streakHintCount >= 0
       ? savedSettings.streakHintCount
       : 0;
-    const revealedHintCells = new Set();
+    const revealedHintCells = new Set(
+      targetValue !== null && Array.isArray(savedSettings?.revealedHintCells)
+        ? savedSettings.revealedHintCells.filter(
+          value => Number.isInteger(value) && value >= 0 && value < 16
+        ).slice(0, 12)
+        : []
+    );
 
     function updateStreakDisplay() {
       streakValue.textContent = String(winStreak);
@@ -1104,6 +1118,7 @@ FFF0..FFFF;Specials`
       targetSolved = false;
       revealedHintCells.clear();
       hintButton.disabled = false;
+      newTargetButton.disabled = true;
       challengeHint.textContent = 'MATCH THE CHARACTER';
       updateStreakDisplay();
       await bundledFontReady;
@@ -1114,11 +1129,13 @@ FFF0..FFFF;Specials`
         if (value !== excludeValue && isRenderableTarget(value)) {
           targetValue = value;
           setPanelGlyph(targetGlyph, String.fromCodePoint(value), baseGlyphFonts);
+          saveLocalSettings();
           return;
         }
       }
       targetValue = 0x41;
       setPanelGlyph(targetGlyph, 'A', baseGlyphFonts);
+      saveLocalSettings();
     }
 
     function renderHintGrid() {
@@ -1145,6 +1162,7 @@ FFF0..FFFF;Specials`
         saveLocalSettings();
         challengeHint.textContent = 'MATCH!';
         hintButton.disabled = true;
+        newTargetButton.disabled = false;
       }
     }
 
@@ -1208,12 +1226,7 @@ FFF0..FFFF;Specials`
     });
 
     newTargetButton.addEventListener('click', () => {
-      if (targetValue !== null && !targetSolved) {
-        winStreak = 0;
-        streakHintCount = 0;
-        updateStreakDisplay();
-        saveLocalSettings();
-      }
+      if (targetValue !== null && !targetSolved) return;
       chooseNextTarget(currentGlyphValue);
     });
 
@@ -1240,6 +1253,7 @@ FFF0..FFFF;Specials`
       updateStreakDisplay();
       challengeHint.textContent = `GIVE UP · U+${targetValue.toString(16).toUpperCase().padStart(4, '0')}`;
       hintButton.disabled = true;
+      newTargetButton.disabled = false;
       setBoardToValue(targetValue);
     });
 
@@ -1392,6 +1406,19 @@ FFF0..FFFF;Specials`
 
       animateGlyphTransition(value, hex.join(''), block);
       checkChallengeMatch(value);
+    }
+
+    if (targetValue !== null) {
+      setPanelGlyph(targetGlyph, String.fromCodePoint(targetValue), baseGlyphFonts);
+      newTargetButton.disabled = !targetSolved;
+      hintButton.disabled = targetSolved || revealedHintCells.size >= 12;
+      if (targetSolved) {
+        challengeHint.textContent = 'MATCH!';
+      } else if (revealedHintCells.size > 0) {
+        renderHintGrid();
+      }
+    } else {
+      newTargetButton.disabled = true;
     }
 
     updateOutput();
