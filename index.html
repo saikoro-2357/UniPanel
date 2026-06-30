@@ -23,6 +23,8 @@
       --muted: #888;
       --background: #000000;
       --ui-font: "UniPanel Noto Sans JP", "Noto Sans JP", "Noto Sans";
+      --mono-font: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      --button-radius: 6px;
     }
 
     * {
@@ -63,7 +65,7 @@
 
     h1 {
       margin: 0;
-      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-family: var(--mono-font);
       font-size: clamp(24px, 3vw, 40px);
       font-weight: 600;
       letter-spacing: .08em;
@@ -71,7 +73,7 @@
 
     .codepoint {
       color: var(--muted);
-      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-family: var(--mono-font);
       font-size: 14px;
       letter-spacing: .08em;
     }
@@ -168,7 +170,7 @@
       top: 50%;
       right: calc(100% + 10px);
       color: var(--muted);
-      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-family: var(--mono-font);
       font-size: clamp(18px, 2.4vw, 28px);
       line-height: 1;
       transform: translateY(-50%);
@@ -178,7 +180,7 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       width: 100%;
-      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-family: var(--mono-font);
       font-size: clamp(28px, 4vw, 48px);
       font-weight: 500;
       line-height: 1;
@@ -251,7 +253,7 @@
     }
 
     .glyph.code-fallback {
-      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-family: var(--mono-font);
       font-size: calc(var(--panel-size) * .18);
       letter-spacing: .06em;
     }
@@ -290,12 +292,13 @@
 
     .copy-button {
       margin-top: 10px;
-      padding: 7px 12px;
+      min-height: 38px;
+      padding: 0 15px;
       border: 1px solid #555;
-      border-radius: 999px;
+      border-radius: var(--button-radius);
       background: color-mix(in srgb, var(--background) 90%, white 7%);
       color: var(--white);
-      font: inherit;
+      font: 600 12px/1 var(--mono-font);
       cursor: pointer;
       transition: border-color 160ms ease, background-color 160ms ease;
     }
@@ -325,41 +328,41 @@
       align-items: center;
       gap: 8px;
       margin-left: auto;
-      padding: 7px;
-      border: 1px solid rgba(245, 245, 242, .18);
-      border-radius: 12px;
-      background: color-mix(in srgb, var(--background) 84%, transparent);
-      backdrop-filter: blur(10px);
+      padding: 0;
+      border: 0;
+      background: transparent;
     }
 
     .color-control {
       display: flex;
       align-items: center;
       gap: 7px;
-      padding-left: 5px;
+      min-height: 38px;
+      padding-left: 7px;
       color: var(--muted);
-      font-size: 12px;
+      font: 600 12px/1 var(--mono-font);
     }
 
     .color-control input {
-      width: 28px;
-      height: 28px;
+      width: 36px;
+      height: 36px;
       padding: 2px;
       border: 1px solid #555;
-      border-radius: 7px;
+      border-radius: var(--button-radius);
       background: transparent;
       cursor: pointer;
     }
 
     .tool-button {
-      min-height: 30px;
-      padding: 0 11px;
+      min-height: 38px;
+      padding: 0 15px;
       border: 1px solid #555;
-      border-radius: 8px;
+      border-radius: var(--button-radius);
       background: color-mix(in srgb, var(--background) 88%, white 8%);
       color: var(--white);
-      font-family: var(--ui-font);
+      font-family: var(--mono-font);
       font-size: 12px;
+      font-weight: 600;
       line-height: 1;
       cursor: pointer;
     }
@@ -379,6 +382,13 @@
       cursor: not-allowed;
     }
 
+    .tool-button,
+    .copy-button,
+    .challenge-close,
+    .color-control input {
+      touch-action: manipulation;
+    }
+
     .challenge-menu {
       position: fixed;
       z-index: 30;
@@ -386,9 +396,10 @@
       left: 50%;
       display: none;
       flex-direction: column;
-      gap: 10px;
-      width: min(230px, 82vw);
-      padding: 18px;
+      gap: 12px;
+      width: min(280px, 88vw);
+      padding: 20px;
+      font-family: var(--mono-font);
       border: 1px solid rgba(245, 245, 242, .34);
       border-radius: 14px;
       background: color-mix(in srgb, var(--background) 82%, transparent);
@@ -410,17 +421,18 @@
 
     .challenge-menu-title {
       margin: 0;
-      font: 600 14px/1 ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font: 600 15px/1 var(--mono-font);
       letter-spacing: .08em;
     }
 
     .challenge-close {
-      width: 25px;
-      height: 25px;
+      width: 38px;
+      height: 38px;
       padding: 0;
       border: 0;
       background: transparent;
       color: var(--muted);
+      font-family: var(--mono-font);
       font-size: 20px;
       cursor: pointer;
     }
@@ -431,7 +443,7 @@
       justify-content: center;
       gap: 3px;
       color: #78ff9d;
-      font: 600 20px/1 ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font: 600 20px/1 var(--mono-font);
       text-align: center;
     }
 
@@ -445,7 +457,7 @@
       min-height: 7.2em;
       margin: 0;
       color: var(--muted);
-      font: 500 12px/1.35 ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font: 500 12px/1.35 var(--mono-font);
       text-align: center;
       white-space: pre-line;
     }
@@ -458,6 +470,21 @@
 
     .challenge-actions .tool-button:first-child {
       grid-column: 1 / -1;
+    }
+
+    .challenge-actions .tool-button {
+      min-height: 44px;
+    }
+
+    .copyright {
+      position: fixed;
+      z-index: 5;
+      left: clamp(12px, 2vw, 28px);
+      bottom: clamp(8px, 1.5vw, 18px);
+      color: var(--muted);
+      font: 500 10px/1 var(--mono-font);
+      letter-spacing: .04em;
+      pointer-events: none;
     }
 
     @media (max-width: 760px) {
@@ -475,6 +502,7 @@
 
       header {
         align-items: center;
+        gap: 8px;
         width: min(94vw, 680px);
         margin-bottom: 8px;
       }
@@ -495,29 +523,34 @@
 
       .toolbar {
         gap: 4px;
-        max-width: calc(100vw - 140px);
+        max-width: calc(100vw - 112px);
         margin-left: auto;
-        padding: 4px;
-        border-radius: 9px;
+        padding: 0;
         flex-wrap: wrap;
         justify-content: flex-end;
       }
 
       .tool-button {
-        min-height: 25px;
-        padding: 0 7px;
-        font-size: 10px;
+        min-height: 44px;
+        padding: 0 10px;
+        font-size: 11px;
       }
 
       .color-control {
         gap: 4px;
-        padding-left: 2px;
-        font-size: 10px;
+        min-height: 44px;
+        padding-left: 6px;
+        font-size: 11px;
       }
 
       .color-control input {
-        width: 24px;
-        height: 24px;
+        width: 44px;
+        height: 44px;
+      }
+
+      .challenge-close {
+        width: 44px;
+        height: 44px;
       }
 
       .code-row {
@@ -545,18 +578,25 @@
       }
 
       .block-actions {
-        gap: 5px;
+        gap: 6px;
         margin-top: 5px;
       }
 
       .copy-button {
-        padding: 5px 8px;
-        font-size: 10px;
+        min-height: 44px;
+        padding: 0 11px;
+        font-size: 11px;
       }
 
       .challenge-menu {
-        width: min(210px, 76vw);
-        padding: 13px;
+        width: min(280px, 88vw);
+        padding: 16px;
+      }
+
+      .copyright {
+        left: 8px;
+        bottom: 6px;
+        font-size: 9px;
       }
     }
 
@@ -624,6 +664,8 @@
       <button class="copy-button" id="shareButton" type="button">𝕏POST</button>
     </div>
   </aside>
+
+  <footer class="copyright">©saikoro2357・2026</footer>
 
   <script>
     const grid = document.getElementById('grid');
