@@ -4,7 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UniPanel</title>
+  <link rel="preload" href="./fonts/NotoSansJP-Variable.ttf" as="font" type="font/ttf" crossorigin>
   <style>
+    @font-face {
+      font-family: "UniPanel Noto Sans JP";
+      src: url("./fonts/NotoSansJP-Variable.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: block;
+    }
+
     :root {
       color-scheme: dark;
       --panel-size: min(38vw, 420px);
@@ -13,6 +22,7 @@
       --white: #f5f5f2;
       --muted: #888;
       --background: #000000;
+      --ui-font: "UniPanel Noto Sans JP", "Noto Sans JP", "Noto Sans";
     }
 
     * {
@@ -35,7 +45,12 @@
       min-height: 100vh;
       min-height: 100dvh;
       padding: clamp(24px, 5vw, 64px);
-      font-family: "Noto Sans JP", "Noto Sans CJK JP", "Noto Sans", "Yu Gothic", sans-serif;
+      font-family: var(--ui-font);
+    }
+
+    button,
+    input {
+      font-family: var(--ui-font);
     }
 
     header {
@@ -199,8 +214,7 @@
       aspect-ratio: 1;
       padding-bottom: calc(var(--panel-size) * .08);
       overflow: hidden;
-      font-family: "Noto Sans JP", "Noto Sans CJK JP", "Noto Sans", "Noto Sans Symbols 2",
-        "Segoe UI Symbol", "Yu Gothic", sans-serif;
+      font-family: var(--ui-font);
       font-size: calc(var(--panel-size) * .84);
       font-weight: 400;
       line-height: 1;
@@ -214,8 +228,7 @@
       place-items: center;
       padding-bottom: calc(var(--panel-size) * .08);
       color: rgba(245, 245, 242, .12);
-      font-family: "Noto Sans JP", "Noto Sans CJK JP", "Noto Sans", "Noto Sans Symbols 2",
-        "Segoe UI Symbol", "Yu Gothic", sans-serif;
+      font-family: var(--ui-font);
       font-size: calc(var(--panel-size) * .84);
       font-weight: 400;
       line-height: 1;
@@ -238,7 +251,7 @@
     }
 
     .glyph.tofu {
-      font-family: "Noto Sans JP", "Noto Sans";
+      font-family: var(--ui-font);
     }
 
     .hint {
@@ -332,7 +345,9 @@
       border-radius: 8px;
       background: color-mix(in srgb, var(--background) 88%, white 8%);
       color: var(--white);
-      font: 12px/1 "Noto Sans JP", "Noto Sans CJK JP", "Noto Sans", sans-serif;
+      font-family: var(--ui-font);
+      font-size: 12px;
+      line-height: 1;
       cursor: pointer;
     }
 
@@ -389,7 +404,7 @@
     </label>
     <button class="tool-button" id="randomizeButton" type="button">盤面ランダム</button>
     <button class="tool-button" id="challengeButton" type="button" aria-pressed="false">ターゲット OFF</button>
-    <button class="tool-button" id="shareButton" type="button">Xに投稿</button>
+    <button class="tool-button" id="shareButton" type="button">Xで投稿</button>
   </div>
 
   <header>
@@ -687,12 +702,12 @@ FFF0..FFFF;Specials`
       }
     }
 
-    const primaryGlyphFonts = `"Noto Sans JP", "Noto Sans CJK JP", "Noto Sans"`;
-    const supplementalGlyphFonts = `"Noto Sans Symbols 2", "Noto Sans Math",
-      "Segoe UI Historic", "Segoe UI Symbol",
-      "Segoe UI Emoji", "Arial Unicode MS", "Nirmala UI", "Leelawadee UI", "Ebrima",
-      "Microsoft YaHei", "Malgun Gothic", "Yu Gothic"`;
-    const baseGlyphFonts = `${primaryGlyphFonts}, ${supplementalGlyphFonts}, sans-serif`;
+    const primaryGlyphFonts = `"UniPanel Noto Sans JP", "Noto Sans JP", "Noto Sans CJK JP", "Noto Sans"`;
+    const supplementalGlyphFonts = `"Noto Sans Symbols 2", "Noto Sans Math"`;
+    const baseGlyphFonts = `${primaryGlyphFonts}, ${supplementalGlyphFonts}`;
+    const bundledFontReady = document.fonts
+      .load('400 180px "UniPanel Noto Sans JP"')
+      .catch(() => []);
     let currentGlyphValue = null;
     let currentCopyText = '';
     let glyphTransitionToken = 0;
@@ -782,9 +797,11 @@ FFF0..FFFF;Specials`
         && signature !== glyphSignature('\u0378', baseGlyphFonts);
     }
 
-    function chooseNextTarget(excludeValue = null) {
+    async function chooseNextTarget(excludeValue = null) {
       window.clearTimeout(matchTimer);
       glyphStage.classList.remove('matched');
+      await bundledFontReady;
+      if (!challengeActive) return;
       for (let attempt = 0; attempt < 300; attempt += 1) {
         const [start, end] = targetRanges[Math.floor(Math.random() * targetRanges.length)];
         const value = start + Math.floor(Math.random() * (end - start + 1));
@@ -868,14 +885,14 @@ FFF0..FFFF;Specials`
       if (currentGlyphValue !== value) return;
       glyph.classList.remove('code-fallback');
       glyph.classList.add('tofu');
-      glyph.style.fontFamily = '"Noto Sans JP", "Noto Sans"';
+      glyph.style.fontFamily = '"UniPanel Noto Sans JP", "Noto Sans JP", "Noto Sans"';
       glyph.textContent = '\u0378';
       hint.textContent = message;
     }
 
     async function improveGlyphCoverage(value, hex, character, block) {
       const family = fontForBlock(block);
-      const fontStack = `${primaryGlyphFonts}, "${family}", ${supplementalGlyphFonts}, sans-serif`;
+      const fontStack = `${primaryGlyphFonts}, "${family}", ${supplementalGlyphFonts}`;
       glyph.style.fontFamily = fontStack;
       await document.fonts.ready;
       await document.fonts.load(`400 180px "${family}"`, character).catch(() => []);
