@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="4×4のビットパネルでUnicode文字を作り、文字コードを確認・共有できるインタラクティブツールです。">
+  <meta name="description" content="4×4のマス目を塗ったり塗らなかったりして知らん文字を出すおもちゃ">
   <meta name="application-name" content="UniPanel">
   <meta name="theme-color" content="#000000">
   <meta name="robots" content="index, follow">
@@ -245,12 +245,16 @@
       inset: 0;
       display: none;
       place-items: center;
+      width: var(--panel-size);
+      aspect-ratio: 1;
       padding-bottom: calc(var(--panel-size) * .04);
+      overflow: visible;
       color: rgba(245, 245, 242, .12);
       font-family: var(--ui-font);
       font-size: calc(var(--panel-size) * .88);
       font-weight: 400;
       line-height: 1;
+      text-align: center;
       pointer-events: none;
       transition: color 180ms ease;
     }
@@ -1047,6 +1051,25 @@ FFF0..FFFF;Specials`
         ?? 'Noto Sans';
     }
 
+    function glyphPresentation(value, block = null) {
+      const resolvedBlock = block
+        ?? unicodeBlocks.find(item => value >= item.start && value <= item.end);
+      const family = fontForBlock(resolvedBlock);
+      return {
+        block: resolvedBlock,
+        character: String.fromCodePoint(value),
+        family,
+        fontStack: `${primaryGlyphFonts}, "${family}", ${supplementalGlyphFonts}`
+      };
+    }
+
+    function setUnicodeGlyph(element, value, block = null) {
+      const presentation = glyphPresentation(value, block);
+      element.style.fontFamily = presentation.fontStack;
+      setPanelGlyph(element, presentation.character, presentation.fontStack);
+      return presentation;
+    }
+
     function glyphSignature(text, fontStack) {
       const canvas = document.createElement('canvas');
       canvas.width = 256;
@@ -1125,10 +1148,10 @@ FFF0..FFFF;Specials`
     ];
 
     function isRenderableTarget(value) {
-      const character = String.fromCodePoint(value);
-      const signature = glyphSignature(character, baseGlyphFonts);
+      const { character, fontStack } = glyphPresentation(value);
+      const signature = glyphSignature(character, fontStack);
       return !signature.startsWith('0:')
-        && signature !== glyphSignature('\u0378', baseGlyphFonts);
+        && signature !== glyphSignature('\u0378', fontStack);
     }
 
     async function chooseNextTarget(excludeValue = null) {
@@ -1146,13 +1169,13 @@ FFF0..FFFF;Specials`
         const value = start + Math.floor(Math.random() * (end - start + 1));
         if (value !== excludeValue && isRenderableTarget(value)) {
           targetValue = value;
-          setPanelGlyph(targetGlyph, String.fromCodePoint(value), baseGlyphFonts);
+          setUnicodeGlyph(targetGlyph, value);
           saveLocalSettings();
           return;
         }
       }
       targetValue = 0x41;
-      setPanelGlyph(targetGlyph, 'A', baseGlyphFonts);
+      setUnicodeGlyph(targetGlyph, targetValue);
       saveLocalSettings();
     }
 
@@ -1312,9 +1335,8 @@ FFF0..FFFF;Specials`
       hint.textContent = message;
     }
 
-    async function improveGlyphCoverage(value, hex, character, block) {
-      const family = fontForBlock(block);
-      const fontStack = `${primaryGlyphFonts}, "${family}", ${supplementalGlyphFonts}`;
+    async function improveGlyphCoverage(value, hex, character, block, presentation) {
+      const { family, fontStack } = presentation ?? glyphPresentation(value, block);
       glyph.style.fontFamily = fontStack;
       glyphFitState.set(glyph, { character, fontStack });
       fitGlyphToPanel(glyph, character, fontStack);
@@ -1354,10 +1376,10 @@ FFF0..FFFF;Specials`
       } else if (isNoncharacter) {
         showTofuFallback(value, 'Unicodeの非文字コードポイントです');
       } else {
-        const character = String.fromCodePoint(value);
-        setPanelGlyph(glyph, character, baseGlyphFonts);
+        const presentation = setUnicodeGlyph(glyph, value, block);
+        const { character } = presentation;
         hint.textContent = '';
-        improveGlyphCoverage(value, hex, character, block);
+        improveGlyphCoverage(value, hex, character, block, presentation);
       }
     }
 
@@ -1427,7 +1449,7 @@ FFF0..FFFF;Specials`
     }
 
     if (targetValue !== null) {
-      setPanelGlyph(targetGlyph, String.fromCodePoint(targetValue), baseGlyphFonts);
+      setUnicodeGlyph(targetGlyph, targetValue);
       newTargetButton.disabled = !targetSolved;
       hintButton.disabled = targetSolved || revealedHintCells.size >= 12;
       if (targetSolved) {
